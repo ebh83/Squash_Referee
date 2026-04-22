@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Squash Referee</title>
+  <style>
+    :root {
+      --bg: #0e0e10;
+      --surface: #17171b;
+      --surface-2: #1f1f24;
+      --border: #2a2a30;
+      --text: #f5f5f7;
+      --muted: #8e8e93;
+      --faint: #5a5a60;
+      --accent: #1f9a5b;
+      --accent-dim: #174d34;
+      --danger: #e5484d;
+      --warn: #f5a524;
+      --info: #3b82f6;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --gap: 12px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Inter, sans-serif;
+      font-size: 15px;
+      line-height: 1.4;
+      letter-spacing: -0.01em;
+      -webkit-user-select: none;
+      user-select: none;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    #root { width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+    h1, h2, h3 { font-weight: 600; letter-spacing: -0.02em; }
+    .title-lg { font-size: 28px; font-weight: 700; }
+
+    /* Setup */
+    .setup {
+      flex: 1; padding: 32px 24px; overflow-y: auto;
+      max-width: 520px; margin: 0 auto; width: 100%;
+    }
+    .setup-header { margin-bottom: 32px; }
+    .setup-header .brand {
+      font-size: 11px; letter-spacing: 0.15em; color: var(--accent);
+      font-weight: 700; text-transform: uppercase; margin-bottom: 6px;
+    }
+
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block; font-size: 12px; color: var(--muted);
+      margin-bottom: 6px; font-weight: 500;
+    }
+    .field input, .field select {
+      width: 100%; padding: 12px 14px; background: var(--surface);
+      border: 1px solid var(--border); color: var(--text);
+      font-size: 15px; border-radius: var(--radius-sm);
+      font-family: inherit; -webkit-appearance: none; appearance: none;
+    }
+    .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
+
+    /* Buttons */
+    .btn {
+      padding: 12px 16px; background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 500; font-family: inherit;
+      cursor: pointer; -webkit-appearance: none; appearance: none;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    .btn:active { opacity: 0.7; }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+    .btn-ghost { background: transparent; border-color: var(--border); color: var(--muted); }
+    .btn-block { width: 100%; }
+    .btn-lg { padding: 14px 18px; font-size: 15px; font-weight: 600; }
+    .btn-sm { padding: 8px 12px; font-size: 13px; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Match */
+    .match { display: flex; flex-direction: column; height: 100%; background: var(--bg); }
+
+    .score-header {
+      flex: 0 0 auto; padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--border); background: var(--bg);
+    }
+    .score-row {
+      display: grid; grid-template-columns: 1fr auto 1fr;
+      gap: 12px; align-items: center;
+    }
+    .score-side {
+      text-align: center; padding: 10px 8px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius); position: relative;
+    }
+    .score-side.serving { border-color: var(--accent); background: var(--surface-2); }
+    .score-side .player {
+      font-size: 12px; color: var(--muted); margin-bottom: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .score-side .value {
+      font-size: 42px; font-weight: 700; color: var(--text); line-height: 1;
+      letter-spacing: -0.04em; font-variant-numeric: tabular-nums;
+    }
+    .score-side .games { font-size: 11px; color: var(--faint); margin-top: 4px; }
+    .score-side .serve-dot {
+      position: absolute; top: 6px; right: 8px; width: 6px; height: 6px;
+      border-radius: 50%; background: var(--accent); display: none;
+    }
+    .score-side.serving .serve-dot { display: block; }
+    .score-middle { font-size: 12px; color: var(--faint); text-align: center; font-variant-numeric: tabular-nums; }
+
+    .point-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+
+    .tabs {
+      flex: 0 0 auto; display: flex; padding: 0 12px;
+      background: var(--bg); border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      flex: 1; padding: 12px 8px; background: transparent; border: none;
+      color: var(--muted); font-size: 13px; font-weight: 500;
+      font-family: inherit; cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+    .tab-content { flex: 1; overflow-y: auto; padding: 16px; -webkit-overflow-scrolling: touch; }
+
+    .section { margin-bottom: 20px; }
+    .section-title {
+      font-size: 11px; color: var(--muted); font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;
+    }
+
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .action-grid .btn { padding: 14px 8px; font-size: 13px; }
+
+    .panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px; margin-top: 10px;
+    }
+    .panel h4 { font-size: 13px; margin-bottom: 10px; color: var(--text); font-weight: 600; }
+    .panel-row { display: flex; gap: 8px; }
+    .panel-row .btn { flex: 1; }
+
+    .call-input {
+      width: 100%; padding: 12px 14px; background: var(--surface);
+      border: 1px solid var(--border); color: var(--text); font-size: 14px;
+      border-radius: var(--radius-sm); font-family: inherit;
+      margin-bottom: 8px; -webkit-appearance: none;
+    }
+    .call-input:focus { outline: none; border-color: var(--accent); }
+
+    .call-result {
+      padding: 12px 14px; background: var(--surface); border-radius: var(--radius-sm);
+      border-left: 3px solid var(--muted); margin-top: 10px;
+    }
+    .call-result .name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+    .call-result .detail { font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+    .log {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); max-height: 260px; overflow-y: auto;
+    }
+    .log-entry {
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums;
+    }
+    .log-entry:last-child { border-bottom: none; }
+    .log-empty { padding: 20px; color: var(--faint); font-size: 13px; text-align: center; }
+
+    .camera-section { display: flex; flex-direction: column; gap: 12px; }
+    .camera-viewport {
+      position: relative; width: 100%; aspect-ratio: 16 / 9;
+      background: #000; border-radius: var(--radius);
+      overflow: hidden; border: 1px solid var(--border);
+    }
+    .camera-viewport video { width: 100%; height: 100%; object-fit: cover; }
+    .camera-off {
+      position: absolute; inset: 0; display: flex;
+      align-items: center; justify-content: center;
+      color: var(--faint); font-size: 13px; background: var(--surface);
+    }
+    .camera-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+    .camera-controls .btn { flex: 1; min-width: 80px; }
+
+    .rec-indicator {
+      position: absolute; top: 10px; left: 10px;
+      display: flex; align-items: center; gap: 6px;
+      padding: 4px 8px; background: rgba(0,0,0,0.6);
+      border-radius: 20px; font-size: 11px; color: #fff; font-weight: 600;
+    }
+    .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .clip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+    .clip-item {
+      aspect-ratio: 1; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); display: flex; align-items: center;
+      justify-content: center; font-size: 13px; color: var(--muted);
+      cursor: pointer; font-weight: 500;
+    }
+    .clip-item.selected { border-color: var(--accent); color: var(--text); background: var(--accent-dim); }
+
+    .review-video-wrap {
+      position: relative; width: 100%; background: #000;
+      border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--border); margin-top: 10px;
+    }
+    .review-video-wrap video { width: 100%; display: block; max-height: 360px; }
+    .review-error {
+      padding: 14px; background: var(--surface); border-radius: var(--radius-sm);
+      color: var(--danger); font-size: 13px;
+    }
+
+    .empty-state {
+      padding: 24px 16px; text-align: center; color: var(--faint);
+      font-size: 13px; background: var(--surface);
+      border: 1px dashed var(--border); border-radius: var(--radius);
+    }
+
+    .flash-overlay {
+      position: fixed; inset: 0; background: rgba(31, 154, 91, 0.92);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 999; animation: flashOut 1s forwards; pointer-events: none;
+    }
+    @keyframes flashOut {
+      0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; }
+    }
+    .flash-text {
+      font-size: 48px; font-weight: 800; color: #fff;
+      letter-spacing: -0.02em; text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+    }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px); display: flex;
+      align-items: center; justify-content: center; z-index: 100;
+    }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px; text-align: center;
+      min-width: 280px; max-width: 90%;
+    }
+    .modal h2 { font-size: 22px; margin-bottom: 20px; }
+
+    .insecure-banner {
+      background: var(--danger); color: #fff; padding: 10px 16px;
+      font-size: 13px; text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useCallback, useRef, useEffect } = React;
+
+    function SquashReferee() {
+      const [screen, setScreen] = useState('setup');
+
+      // Setup
+      const [playerA, setPlayerA] = useState('Player A');
+      const [playerB, setPlayerB] = useState('Player B');
+      const [bestOf, setBestOf] = useState(3);
+      const [pointsTo, setPointsTo] = useState(11);
+      const [firstServer, setFirstServer] = useState('A');
+
+      // Match
+      const [scoreA, setScoreA] = useState(0);
+      const [scoreB, setScoreB] = useState(0);
+      const [gamesA, setGamesA] = useState(0);
+      const [gamesB, setGamesB] = useState(0);
+      const [server, setServer] = useState(firstServer);
+      const [matchOver, setMatchOver] = useState(false);
+      const [callLog, setCallLog] = useState([]);
+
+      // Call assistant
+      const [callInput, setCallInput] = useState('');
+      const [callResult, setCallResult] = useState(null);
+
+      // Camera
+      const [cameraActive, setCameraActive] = useState(false);
+      const [cameraStream, setCameraStream] = useState(null);
+      const [facingMode, setFacingMode] = useState('user');
+      const videoRefCamera = useRef(null);
+
+      // Recording
+      const [recording, setRecording] = useState(false);
+      const mediaRecorderRef = useRef(null);
+      const recordingChunks = useRef([]);
+
+      // Clips
+      const [clips, setClips] = useState([]);
+      const [reviewClip, setReviewClip] = useState(null);
+      const [reviewVideoError, setReviewVideoError] = useState(false);
+
+      // Panels
+      const [interferenceWizard, setInterferenceWizard] = useState(false);
+      const [interferenceStep, setInterferenceStep] = useState(0);
+      const [serviceFaultPanel, setServiceFaultPanel] = useState(false);
+      const [ballCallPanel, setBallCallPanel] = useState(false);
+
+      const [activeTab, setActiveTab] = useState('match');
+      const [flashText, setFlashText] = useState(null);
+      const flashTimeout = useRef(null);
+
+      // Secure-context check
+      const isSecure = window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      const hasMediaDevices = typeof navigator !== 'undefined' && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+
+      // Bind stream once <video> is mounted
+      useEffect(() => {
+        const v = videoRefCamera.current;
+        if (v && cameraStream) {
+          v.srcObject = cameraStream;
+          const p = v.play();
+          if (p && p.catch) p.catch((err) => console.warn('play() failed:', err));
+        } else if (v && !cameraStream) {
+          v.srcObject = null;
+        }
+      }, [cameraStream, cameraActive]);
+
+      useEffect(() => {
+        return () => {
+          if (cameraStream) cameraStream.getTracks().forEach((t) => t.stop());
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            try { mediaRecorderRef.current.stop(); } catch (e) {}
+          }
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+
+      const startCamera = useCallback(async () => {
+        if (!hasMediaDevices) {
+          alert('Camera API not available. Serve this page over HTTPS or localhost.');
+          return;
+        }
+        // Cascading fallback: many laptop webcams don't expose facingMode and
+        // throw OverconstrainedError, so degrade to any camera / no audio.
+        const attempts = [
+          { video: { facingMode }, audio: true },
+          { video: { facingMode: { ideal: facingMode } }, audio: true },
+          { video: true, audio: true },
+          { video: true, audio: false },
+        ];
+        let lastErr;
+        for (const constraints of attempts) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            setCameraStream(stream);
+            setCameraActive(true);
+            return;
+          } catch (err) {
+            lastErr = err;
+            console.warn('getUserMedia failed for', constraints, err.name);
+            // Only retry for OverconstrainedError / NotFoundError / NotReadableError
+            if (!['OverconstrainedError', 'NotFoundError', 'NotReadableError', 'TypeError'].includes(err.name)) break;
+          }
+        }
+        console.error('Camera error:', lastErr);
+        alert('Camera error: ' + (lastErr?.message || lastErr?.name || 'unknown'));
+      }, [facingMode, hasMediaDevices]);
+
+      const stopCamera = useCallback(() => {
+        if (recording && mediaRecorderRef.current) {
+          try { mediaRecorderRef.current.stop(); } catch (e) {}
+        }
+        if (cameraStream) cameraStream.getTracks().forEach((t) => t.stop());
+        setCameraStream(null);
+        setCameraActive(false);
+      }, [cameraStream, recording]);
+
+      const flipCamera = useCallback(async () => {
+        const newMode = facingMode === 'user' ? 'environment' : 'user';
+        setFacingMode(newMode);
+        if (cameraStream) cameraStream.getTracks().forEach((t) => t.stop());
+        const attempts = [
+          { video: { facingMode: newMode }, audio: true },
+          { video: { facingMode: { ideal: newMode } }, audio: true },
+          { video: true, audio: true },
+          { video: true, audio: false },
+        ];
+        for (const constraints of attempts) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            setCameraStream(stream);
+            setCameraActive(true);
+            return;
+          } catch (err) {
+            console.warn('Flip getUserMedia failed for', constraints, err.name);
+            if (!['OverconstrainedError', 'NotFoundError', 'NotReadableError', 'TypeError'].includes(err.name)) break;
+          }
+        }
+        setCameraStream(null);
+        setCameraActive(false);
+      }, [facingMode, cameraStream]);
+
+      const startRecording = useCallback(() => {
+        if (!cameraStream) { alert('Camera not started'); return; }
+        if (typeof MediaRecorder === 'undefined') {
+          alert('Recording is not supported in this browser.');
+          return;
+        }
+        recordingChunks.current = [];
+        const supportedTypes = [
+          'video/mp4', 'video/mp4;codecs=h264',
+          'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm',
+        ];
+        let mimeType = '';
+        for (const type of supportedTypes) {
+          try {
+            if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) {
+              mimeType = type; break;
+            }
+          } catch (e) {}
+        }
+        let recorder;
+        try {
+          recorder = mimeType
+            ? new MediaRecorder(cameraStream, { mimeType })
+            : new MediaRecorder(cameraStream);
+        } catch (err) {
+          console.error('MediaRecorder init error:', err);
+          alert('Unable to start recording: ' + (err.message || err.name));
+          return;
+        }
+        recorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) recordingChunks.current.push(e.data);
+        };
+        recorder.onerror = (e) => console.error('MediaRecorder error:', e);
+        recorder.onstop = () => {
+          const type = recorder.mimeType || mimeType || 'video/mp4';
+          const blob = new Blob(recordingChunks.current, { type });
+          recordingChunks.current = [];
+          if (blob.size === 0) { console.warn('Empty blob'); return; }
+          const url = URL.createObjectURL(blob);
+          const id = `clip_${Date.now()}`;
+          setClips((prev) => [...prev, { id, url, blob }]);
+        };
+        try {
+          recorder.start(1000);
+          mediaRecorderRef.current = recorder;
+          setRecording(true);
+        } catch (err) {
+          console.error('recorder.start error:', err);
+          alert('Unable to start recording: ' + (err.message || err.name));
+        }
+      }, [cameraStream]);
+
+      const stopRecording = useCallback(() => {
+        const r = mediaRecorderRef.current;
+        if (r && r.state !== 'inactive') {
+          try { r.stop(); } catch (e) { console.error(e); }
+        }
+        mediaRecorderRef.current = null;
+        setRecording(false);
+      }, []);
+
+      const downloadClip = useCallback((clip) => {
+        const a = document.createElement('a');
+        a.href = clip.url;
+        const ext = (clip.blob?.type?.includes('mp4') ? 'mp4' : 'webm');
+        a.download = `${clip.id}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }, []);
+
+      const addCallLog = useCallback((entry) => {
+        const ts = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        setCallLog((prev) => [...prev, `${ts} — ${entry}`].slice(-40));
+      }, []);
+
+      const flash = useCallback((text) => {
+        setFlashText(text);
+        if (flashTimeout.current) clearTimeout(flashTimeout.current);
+        flashTimeout.current = setTimeout(() => setFlashText(null), 1000);
+      }, []);
+
+      const pointWonByA = useCallback(() => {
+        const newScoreA = scoreA + 1;
+        setScoreA(newScoreA);
+        setServer(scoreA % 2 === 0 ? 'A' : 'B');
+        if (newScoreA === pointsTo) {
+          setGamesA(gamesA + 1);
+          setScoreA(0); setScoreB(0);
+          if (gamesA + 1 > bestOf / 2) {
+            setMatchOver(true);
+            addCallLog(`${playerA} wins match`);
+          } else {
+            addCallLog(`${playerA} wins game (${gamesA + 1}-${gamesB})`);
+          }
+        }
+      }, [scoreA, pointsTo, gamesA, gamesB, bestOf, playerA, addCallLog]);
+
+      const pointWonByB = useCallback(() => {
+        const newScoreB = scoreB + 1;
+        setScoreB(newScoreB);
+        setServer(scoreB % 2 === 0 ? 'A' : 'B');
+        if (newScoreB === pointsTo) {
+          setGamesB(gamesB + 1);
+          setScoreA(0); setScoreB(0);
+          if (gamesB + 1 > bestOf / 2) {
+            setMatchOver(true);
+            addCallLog(`${playerB} wins match`);
+          } else {
+            addCallLog(`${playerB} wins game (${gamesA}-${gamesB + 1})`);
+          }
+        }
+      }, [scoreB, pointsTo, gamesA, gamesB, bestOf, playerB, addCallLog]);
+
+      // ===== WSF 2025 rule engine =====
+      const analyzeCall = useCallback((text) => {
+        const t = text.toLowerCase().replace(/[''`]/g, "'").replace(/[^\w\s']/g, " ").replace(/\s+/g, " ").trim();
+        const has = (arr) => arr.some(k => t.includes(k));
+        const words = t.split(" ");
+        const hasW = (arr) => arr.some(k => words.includes(k));
+        const D = {
+          ballHit: has(["ball hit","hit by ball","ball struck","struck by ball","drilled","hit him with","hit her with","ball hit opponent","ball hit player","hit the player","hit the opponent","pegged","nailed"]),
+          turning: hasW(["turn","turned","turning","spun"]) || has(["spun around","followed the ball","ball went behind","ball passed behind","played it round","played around"]),
+          swing: has(["swing","backswing","back swing","follow through","follow-through","followthrough","racket","racquet"]),
+          swingBlock: has(["couldn't swing","blocked swing","swing blocked","blocked my swing","blocked his swing","blocked her swing","prevented swing","swing prevented","swing was prevented","restricted swing","couldn't complete swing","no swing","couldn't take swing","prevented my swing"]),
+          swingAffect: has(["affected swing","swing affected","swing slightly","slightly affected","limited swing","cramped swing","adjusted swing","changed swing","shortened swing","had to adjust","couldn't swing freely","restricted"]),
+          toFront: has(["straight to front","direct to front","going to front","toward front","heading to front","would have hit front","front wall"]),
+          toSide: has(["side wall","sidewall","going to side","hit the side","toward side","towards side","off the side"]),
+          blocked: has(["block","blocked","blocking","in the way","in my way","in his way","in her way","in their way","couldn't get to","couldn't reach","no access","zero access","denied access","between me and","between him and","between her and","no way past","no way around","no way through","right in front","standing right","directly in","completely prevented"]),
+          noRoom: has(["no room","no space","couldn't play","trapped"]),
+          noEffortOpp: has(["didn't move","didn't clear","wouldn't move","wouldn't clear","refused to move","stood there","standing there","stayed on the ball","stayed on it","didn't get out","no effort to clear","didn't try to move","didn't try to clear"]),
+          effortOpp: has(["tried to move","trying to move","tried to clear","trying to clear","made effort","making effort","moved but","tried to get out","attempting to clear","was moving","effort to avoid","tried to avoid"]),
+          deliberate: has(["deliberate","deliberately","intentional","intentionally","on purpose"]),
+          noEffort: has(["no effort","didn't try","didn't even try","gave up","no attempt","just stood","just stopped","stopped playing","didn't go for it","didn't move for it"]),
+          selfCreated: has(["own fault","created it","caused it","went into","ran into him","ran into me","walked into him","walked into me","wrong line","wrong path","wrong way","took wrong","went the wrong","chose not to go","could have gone around","access was given","room on the other","plenty of room","space available","could have gone the other way"]),
+          fishing: has(["fish","fishing","looking for","wanted a stroke","tried to get stroke","didn't play","chose not to play","could have played","manufactured","stopped deliberately","stopped on purpose"]),
+          playedOn: has(["played on","kept going","moved past","played through","continued playing"]),
+          farFromBall: has(["far from","far away","away from","nowhere near","not near","not close","distant","other side","across","couldn't have got","couldn't have gotten","wouldn't have got","wouldn't have reached","ball was far","long way"]),
+          winning: has(["would have won","could have won","winning shot","winning return","would have hit","could have hit","had the shot","was going to win","good position","about to hit","ready to hit","would have been a winner","dead nick","perfect shot"]),
+          unreachable: has(["no chance","no way","impossible","couldn't have got","too good","unreturnable","ball was dead","wasn't going to get","never going to get"]),
+          noTimeOpp: has(["no time","couldn't avoid","couldn't get out","too quick","too fast","sudden","no chance to move"]),
+          unnecessaryTurn: has(["unnecessary","didn't need to turn","could have played without turning","chose to turn"]),
+          dangerous: has(["dangerous","danger","unsafe","could have hurt","could have hit","nearly hit","almost hit","scared","afraid","feared","ducked","flinched"]),
+          heldBack: has(["stop","stopped","didn't swing","held back","pulled out","didn't play","afraid to swing","didn't want to hit"]),
+          excessSwing: has(["excessive swing","big swing","wild swing","exaggerated","over-swing"]),
+          minimal: has(["minimal","slight","barely","hardly","minor","small","little bit","slightly","tiny"]),
+          both: has(["both","each other","both players","both went","accident","accidental","both moved","both going"]),
+          serve: has(["serv"]),
+          foot: has(["foot"]),
+          wrongBox: has(["wrong box","wrong side","wrong quarter","out of turn"]),
+          conduct: has(["conduct","misconduct","behavior","behaviour"]),
+          argue: has(["argue","arguing","argument","complain","complaining","dissent","protest"]),
+          delay: has(["delay","stall","stalling","time wasting","wasting time","taking too long","slow to return","late back"]),
+          throwRacket: has(["throw","threw","throwing"]) && has(["racket","racquet"]),
+          swear: has(["swear","swore","cursing","curse","swearing","language","obscen"]),
+          abuse: has(["abuse","abusing","abusive","verbal"]),
+          physicalMis: (has(["punch","kick","shove","push","spit"]) && has(["player","opponent","him","her","ref"])) || (has(["hit","struck"]) && has(["player","opponent","ref"]) && !has(["ball hit","hit by ball","ball struck","struck by ball","ball hit opponent","ball hit player","hit the player","hit the opponent","afraid to hit","didn't want to hit","could have hit","nearly hit","almost hit"])),
+          breakEquip: has(["break","broke","smash","smashed"]) && has(["racket","racquet","glass"]),
+          tin: hasW(["tin"]) || has(["hit the tin","hit tin","in the tin"]),
+          notUp: has(["not up","double bounce","bounced twice","two bounce","carry","carried","scoop","scooped"]),
+          out: (has(["out"]) && has(["line","above","over","high","long"])) || has(["above the line","over the line","outside the court"]),
+          ballDown: has(["ball down","missed","miss","whiff","didn't return","failed to return","couldn't return","didn't hit"]),
+          winner: has(["winner","winning shot","ace","nick","kill","won the point","won the rally","great shot","amazing shot"]),
+          distraction: has(["distract","distraction","noise","something happened"]),
+          ballBroke: has(["ball broke","ball cracked","broken ball","ball split"]),
+          bodyContact: has(["bump","bumped","collision","crash","collid","tangle","tangled","tripped","contact","crowded","too close"]),
+        };
+        const R = (call, type, color, detail, rule) => ({ call, type, color, detail: detail + (rule ? " [WSF Rule " + rule + "]" : "") });
+        if (has(["no let"]) && !has(["not a no let"])) return R("No Let","interference","#e5484d","No Let — point to opponent.","8.6");
+        if (has(["stroke"]) && !has(["conduct stroke"]) && !D.conduct && !D.fishing && !has(["wanted a stroke","tried to get stroke","for a stroke"])) return R("Stroke","interference","#f5a524","Stroke awarded — point to obstructed player.","8.6");
+        if (has(["yes let","play a let","yes, let"]) || (has(["let"]) && !has(["no let","didn't let","let me","let him","let her","let the"]) && !D.blocked && !D.swing)) return R("Let","interference","#3b82f6","Let — rally replayed.","8.6");
+        if (D.tin && !D.blocked && !D.swing && !D.serve) return R("Tin","ball","#e5484d","Ball hit the tin. Point to opponent.","7");
+        if (D.notUp && !D.blocked && !D.swing) return R("Not Up","ball","#e5484d","Ball bounced twice or carried/scooped. Point to opponent.","7");
+        if (D.out && !D.blocked && !D.swing) return R("Out","ball","#e5484d","Ball above out line. Point to opponent.","7");
+        if (D.ballDown && !D.blocked && !D.swing && !D.ballHit) return R("Ball Down","ball","#e5484d","Failed to return ball. Point to opponent.","7");
+        if (D.serve && D.foot) return R("Fault — Foot Fault","service","#f5a524","Foot on/over line during serve.","5");
+        if (D.wrongBox) return R("Fault — Wrong Box","service","#f5a524","Served from wrong box.","5");
+        if (D.serve && has(["fault","bad serve","below","low","short","tin"])) return R("Fault — Bad Serve","service","#f5a524","Serve below line or in tin.","5");
+        if (D.physicalMis || has(["spit","spitting"])) return R("Conduct Stroke","conduct","#dc2626","Physical misconduct. Point to opponent.","14");
+        if (D.throwRacket || D.breakEquip) return R("Conduct Stroke","conduct","#dc2626","Equipment abuse. Point to opponent.","14");
+        if (D.swear || D.abuse) return R("Conduct Stroke","conduct","#dc2626","Verbal abuse. Point to opponent.","14");
+        if (has(["conduct game","game penalty"]) || (has(["forfeit","lose"]) && has(["game"]))) return R("Conduct Game","conduct","#dc2626","Game awarded to opponent.","14");
+        if (has(["conduct match","disqualif","default"]) && has(["match"])) return R("Conduct Match","conduct","#dc2626","Match forfeited.","14");
+        if (D.argue || D.delay || has(["warning"])) return R("Conduct Warning","conduct","#dc2626","Warning issued.","14");
+        if (D.ballBroke) return R("Let","interference","#3b82f6","Ball broke. Rally replayed.","12");
+        if (D.distraction) return R("Let","interference","#3b82f6","External distraction. Rally replayed.","12");
+        if (D.ballHit) {
+          if (D.turning) return R("Stroke (to opponent)","interference","#f5a524","Striker turned and ball hit opponent. Stroke to non-striker.","9.1.5");
+          if (D.toFront && !D.toSide) return R("Stroke","interference","#f5a524","Ball heading direct to front wall. Stroke to striker.","9.1.2");
+          if (D.toSide) { if (D.winning) return R("Stroke","interference","#f5a524","Ball to side wall but winning return. Stroke.","9.1.3"); return R("Let","interference","#3b82f6","Ball heading to side wall first. Let.","9.1.3"); }
+          if (D.winning) return R("Stroke","interference","#f5a524","Winning return hit opponent. Stroke.","9.1.2");
+          return R("Stroke","interference","#f5a524","Ball struck opponent. Stroke if direct to front; Let if via side wall.","9.1");
+        }
+        if (D.turning) {
+          if (D.unnecessaryTurn) return R("No Let","interference","#e5484d","Unnecessary turn. No Let.","8.13.3");
+          if (D.swingBlock) return R("Stroke","interference","#f5a524","Turned, swing prevented. Stroke.","8.13.1");
+          if (D.blocked && D.noEffortOpp) return R("Stroke","interference","#f5a524","Turned, opponent didn't clear. Stroke.","8.13.1");
+          if (D.noTimeOpp || D.effortOpp || D.both) return R("Let","interference","#3b82f6","Turned, opponent had no time. Let.","8.13.2");
+          if (D.dangerous || D.heldBack) return R("Let","interference","#3b82f6","Turned, held back for safety. Let.","8.13.2");
+          if (D.blocked || D.noRoom) return R("Let","interference","#3b82f6","Turned with interference. Let.","8.13");
+          return R("Let","interference","#3b82f6","Player turned. Let unless swing prevented or turn unnecessary.","8.13");
+        }
+        if (D.swingBlock || D.swingAffect || (D.swing && D.blocked)) {
+          if (D.excessSwing && D.selfCreated) return R("No Let","interference","#e5484d","Excessive swing, own fault. No Let.","8.10.1");
+          if (D.excessSwing) return R("Let","interference","#3b82f6","Excessive swing, opponent contributed. Let.","8.10.2");
+          if (D.swingBlock) return R("Stroke","interference","#f5a524","Swing prevented. Always Stroke.","8.9.2");
+          if (D.swingAffect || D.minimal) { if (D.winning) return R("Stroke","interference","#f5a524","Swing affected, winning return. Stroke.","8.9.1"); return R("Let","interference","#3b82f6","Swing affected but not prevented. Let.","8.9.1"); }
+        }
+        const isI = D.blocked || D.noRoom || D.noEffortOpp || D.effortOpp || D.bodyContact || D.selfCreated || D.fishing || D.noEffort || D.dangerous || D.heldBack || D.unreachable || has(["interfere","interference","appeal","let","got in"]);
+        if (isI) {
+          if (D.noEffort && !D.blocked && !D.swingBlock) return R("No Let","interference","#e5484d","No effort to reach ball. No Let.","8.6.2");
+          if (D.unreachable && !D.blocked && !D.swingBlock) return R("No Let","interference","#e5484d","Ball unretrievable. No Let.","8.6.2");
+          if (D.playedOn) return R("No Let","interference","#e5484d","Played on past interference. No Let.","8.6.3");
+          if (D.selfCreated && !D.swingBlock) return R("No Let","interference","#e5484d","Self-created interference. No Let.","8.8.2");
+          if (D.fishing) return R("No Let","interference","#e5484d","Fishing for a call. No Let.","8.6");
+          if (D.minimal && !D.swing && !D.swingBlock && !D.winning) return R("No Let","interference","#e5484d","Minimal interference. No Let.","8.6.4");
+          if (D.excessSwing) return R("No Let","interference","#e5484d","Excessive swing caused it. No Let.","8.10.1");
+          if (D.farFromBall && D.noEffort) return R("No Let","interference","#e5484d","Far from ball, no effort. No Let.","8.6.2");
+          if (D.noEffortOpp && !D.farFromBall && !D.effortOpp) { if (D.deliberate) return R("Stroke","interference","#f5a524","Deliberate block. Stroke.","8.6.5"); return R("Stroke","interference","#f5a524","Opponent didn't clear. Stroke.","8.6.5"); }
+          if (D.toFront && !D.toSide && D.blocked && !D.effortOpp) return R("Stroke","interference","#f5a524","Front wall blocked. Stroke.","8.11.1");
+          if (D.winning && D.blocked) return R("Stroke","interference","#f5a524","Winning return prevented. Stroke.","8.6.7");
+          if (has(["completely prevented","zero access","no access","no way past","no way through","total block"]) && !D.farFromBall) return R("Stroke","interference","#f5a524","Complete block. Stroke.","8.6.5");
+          if (D.blocked && D.farFromBall) return R("Let","interference","#3b82f6","Blocked but ball was far. Let.","8.6.6");
+          if (D.effortOpp && D.blocked) return R("Let","interference","#3b82f6","Opponent tried to clear. Let.","8.6.6");
+          if (D.toFront && D.effortOpp) return R("Let","interference","#3b82f6","Front wall, opponent made effort. Let.","8.11.1");
+          if (D.toSide && D.blocked) { if (D.winning) return R("Stroke","interference","#f5a524","Side wall, winning blocked. Stroke.","8.11.2"); return R("Let","interference","#3b82f6","Side wall interference. Let.","8.11.2"); }
+          if (D.bodyContact && !D.selfCreated) return R("Let","interference","#3b82f6","Physical contact. Let.","8.6.6");
+          if (D.dangerous || D.heldBack) return R("Let","interference","#3b82f6","Held back for safety. Let.","8.6.6");
+          if (D.both) return R("Let","interference","#3b82f6","Both at fault. Let.","8.6.6");
+          if (D.blocked || D.noRoom) { if (D.noEffortOpp) return R("Stroke","interference","#f5a524","Blocked, no effort to clear. Stroke.","8.6.5"); return R("Let","interference","#3b82f6","Interference occurred. Let.","8.6.6"); }
+          return R("Let","interference","#3b82f6","Interference. Let — rally replayed.","8.6.6");
+        }
+        if (D.winner) return R("Point — Winner","point","#1f9a5b","Clean winner. Point awarded.","");
+        return { call: "Unclear", type: "unknown", color: "#8e8e93", detail: "Describe what happened: \"blocked my swing\", \"in the way but tried to move\", \"ball hit him going to front wall\", \"turned and he was there\", \"took wrong line\"" };
+      }, []);
+
+      const handleCallSubmit = useCallback(() => {
+        if (!callInput.trim()) return;
+        const result = analyzeCall(callInput);
+        setCallResult(result);
+        addCallLog(`Call: ${result.call} — ${result.detail}`);
+        flash(result.call);
+        setCallInput('');
+      }, [callInput, analyzeCall, addCallLog, flash]);
+
+      const interferenceQuestions = [
+        { q: 'Did player intentionally interfere?', yes: 'Stroke', no: 'Let' },
+        { q: 'Contact with ball?', yes: 'Stroke', no: 'Let' },
+        { q: 'Deliberate action?', yes: 'Stroke', no: 'Let' },
+      ];
+      const handleInterferenceAnswer = (yes) => {
+        const answer = yes ? interferenceQuestions[interferenceStep].yes : interferenceQuestions[interferenceStep].no;
+        addCallLog(`Interference: ${answer}`);
+        flash(answer);
+        setInterferenceWizard(false);
+        setInterferenceStep(0);
+      };
+
+      if (screen === 'setup') {
+        return (
+          <div className="setup">
+            {!isSecure && (
+              <div className="insecure-banner">
+                Page is not on a secure context. Camera access requires HTTPS or localhost.
+              </div>
+            )}
+            <div className="setup-header">
+              <div className="brand">Squash</div>
+              <h1 className="title-lg">Referee</h1>
+            </div>
+
+            <div className="field"><label>Player A</label>
+              <input type="text" value={playerA} onChange={(e) => setPlayerA(e.target.value)} /></div>
+            <div className="field"><label>Player B</label>
+              <input type="text" value={playerB} onChange={(e) => setPlayerB(e.target.value)} /></div>
+            <div className="field"><label>Format</label>
+              <select value={bestOf} onChange={(e) => setBestOf(Number(e.target.value))}>
+                <option value={3}>Best of 3</option><option value={5}>Best of 5</option>
+              </select></div>
+            <div className="field"><label>Points per game</label>
+              <select value={pointsTo} onChange={(e) => setPointsTo(Number(e.target.value))}>
+                <option value={11}>11</option><option value={15}>15</option>
+              </select></div>
+            <div className="field"><label>First server</label>
+              <select value={firstServer} onChange={(e) => setFirstServer(e.target.value)}>
+                <option value="A">{playerA}</option><option value="B">{playerB}</option>
+              </select></div>
+
+            <button className="btn btn-primary btn-block btn-lg" style={{ marginTop: 16 }}
+              onClick={() => { setServer(firstServer); setScreen('match'); }}>
+              Start match
+            </button>
+          </div>
+        );
+      }
+
+      return (
+        <div className="match">
+          <div className="score-header">
+            <div className="score-row">
+              <div className={`score-side ${server === 'A' ? 'serving' : ''}`}>
+                <div className="serve-dot" />
+                <div className="player">{playerA}</div>
+                <div className="value">{scoreA}</div>
+                <div className="games">Games {gamesA}</div>
+              </div>
+              <div className="score-middle">vs</div>
+              <div className={`score-side ${server === 'B' ? 'serving' : ''}`}>
+                <div className="serve-dot" />
+                <div className="player">{playerB}</div>
+                <div className="value">{scoreB}</div>
+                <div className="games">Games {gamesB}</div>
+              </div>
+            </div>
+            <div className="point-row">
+              <button className="btn btn-primary" onClick={pointWonByA} disabled={matchOver}>+ {playerA}</button>
+              <button className="btn btn-primary" onClick={pointWonByB} disabled={matchOver}>+ {playerB}</button>
+            </div>
+          </div>
+
+          <div className="tabs">
+            <button className={`tab ${activeTab === 'match' ? 'active' : ''}`} onClick={() => setActiveTab('match')}>Calls</button>
+            <button className={`tab ${activeTab === 'video' ? 'active' : ''}`} onClick={() => setActiveTab('video')}>Video</button>
+            <button className={`tab ${activeTab === 'log' ? 'active' : ''}`} onClick={() => setActiveTab('log')}>Log</button>
+          </div>
+
+          <div className="tab-content">
+            {activeTab === 'match' && (
+              <>
+                <div className="section">
+                  <div className="section-title">Referee actions</div>
+                  <div className="action-grid">
+                    <button className="btn" onClick={() => { addCallLog('Let'); flash('LET'); }}>Let</button>
+                    <button className="btn" onClick={() => { addCallLog('Stroke'); flash('STROKE'); }}>Stroke</button>
+                    <button className="btn" onClick={() => { addCallLog('No Let'); flash('NO LET'); }}>No Let</button>
+                    <button className="btn" onClick={() => setServiceFaultPanel(!serviceFaultPanel)}>Service fault</button>
+                    <button className="btn" onClick={() => setBallCallPanel(!ballCallPanel)}>Ball call</button>
+                    <button className="btn" onClick={() => setInterferenceWizard(!interferenceWizard)}>Interference</button>
+                  </div>
+
+                  {serviceFaultPanel && (
+                    <div className="panel"><h4>Service fault</h4>
+                      <div className="panel-row">
+                        <button className="btn" onClick={() => { addCallLog('Fault — Illegal serve'); setServiceFaultPanel(false); }}>Illegal</button>
+                        <button className="btn" onClick={() => { addCallLog('Fault — Foot fault'); setServiceFaultPanel(false); }}>Foot fault</button>
+                      </div>
+                      <button className="btn btn-ghost btn-block btn-sm" style={{ marginTop: 8 }} onClick={() => setServiceFaultPanel(false)}>Cancel</button>
+                    </div>
+                  )}
+
+                  {ballCallPanel && (
+                    <div className="panel"><h4>Ball call</h4>
+                      <div className="panel-row">
+                        <button className="btn" onClick={() => { addCallLog('Out'); setBallCallPanel(false); }}>Out</button>
+                        <button className="btn" onClick={() => { addCallLog('Down'); setBallCallPanel(false); }}>Down</button>
+                        <button className="btn" onClick={() => { addCallLog('Not up'); setBallCallPanel(false); }}>Not up</button>
+                      </div>
+                      <button className="btn btn-ghost btn-block btn-sm" style={{ marginTop: 8 }} onClick={() => setBallCallPanel(false)}>Cancel</button>
+                    </div>
+                  )}
+
+                  {interferenceWizard && interferenceStep < interferenceQuestions.length && (
+                    <div className="panel">
+                      <div style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Decision tree</div>
+                      <h4>{interferenceQuestions[interferenceStep].q}</h4>
+                      <div className="panel-row">
+                        <button className="btn btn-primary" onClick={() => handleInterferenceAnswer(true)}>Yes</button>
+                        <button className="btn" onClick={() => handleInterferenceAnswer(false)}>No</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="section">
+                  <div className="section-title">Call assistant</div>
+                  <input type="text" className="call-input" placeholder="Describe the call…"
+                    value={callInput}
+                    onChange={(e) => setCallInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleCallSubmit()} />
+                  <button className="btn btn-primary btn-block" onClick={handleCallSubmit}>Analyze</button>
+                  {callResult && (
+                    <div className="call-result" style={{ borderLeftColor: callResult.color }}>
+                      <div className="name">{callResult.call}</div>
+                      <div className="detail">{callResult.detail}</div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {activeTab === 'video' && (
+              <div className="camera-section">
+                {!isSecure && (
+                  <div className="insecure-banner" style={{ borderRadius: 6 }}>
+                    Camera needs HTTPS or localhost to work.
+                  </div>
+                )}
+                <div className="section-title">Camera</div>
+                <div className="camera-viewport">
+                  {cameraActive
+                    ? <video ref={videoRefCamera} playsInline autoPlay muted />
+                    : <div className="camera-off">Camera is off</div>}
+                  {recording && (
+                    <div className="rec-indicator"><div className="rec-dot" />REC</div>
+                  )}
+                </div>
+
+                <div className="camera-controls">
+                  {!cameraActive && <button className="btn btn-primary" onClick={startCamera}>Start camera</button>}
+                  {cameraActive && !recording && <button className="btn btn-danger" onClick={startRecording}>● Record</button>}
+                  {cameraActive && recording && <button className="btn btn-danger" onClick={stopRecording}>■ Stop</button>}
+                  {cameraActive && (<>
+                    <button className="btn" onClick={flipCamera}>Flip</button>
+                    <button className="btn btn-ghost" onClick={stopCamera}>Off</button>
+                  </>)}
+                </div>
+
+                <div className="section" style={{ marginTop: 16 }}>
+                  <div className="section-title">Clips ({clips.length})</div>
+                  {clips.length === 0 ? (
+                    <div className="empty-state">No clips yet. Press Record to capture one.</div>
+                  ) : (
+                    <div className="clip-grid">
+                      {clips.map((clip, idx) => (
+                        <div key={clip.id}
+                          className={`clip-item ${reviewClip?.id === clip.id ? 'selected' : ''}`}
+                          onClick={() => { setReviewClip(clip); setReviewVideoError(false); }}>
+                          {idx + 1}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {reviewClip && (
+                    <>
+                      <div className="review-video-wrap">
+                        {!reviewVideoError ? (
+                          <video key={reviewClip.id} src={reviewClip.url}
+                            controls playsInline autoPlay
+                            onError={() => setReviewVideoError(true)} />
+                        ) : (
+                          <div className="review-error">Unable to load video.</div>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                        <button className="btn btn-ghost btn-sm" style={{ flex: 1 }}
+                          onClick={() => { setReviewClip(null); setReviewVideoError(false); }}>Close</button>
+                        <button className="btn btn-sm" style={{ flex: 1 }}
+                          onClick={() => downloadClip(reviewClip)}>Download</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'log' && (
+              <div className="section">
+                <div className="section-title">Call log</div>
+                <div className="log">
+                  {callLog.length === 0 ? (
+                    <div className="log-empty">No calls yet</div>
+                  ) : (
+                    callLog.slice().reverse().map((entry, idx) => (
+                      <div key={idx} className="log-entry">{entry}</div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {flashText && (
+            <div className="flash-overlay"><div className="flash-text">{flashText}</div></div>
+          )}
+
+          {matchOver && (
+            <div className="modal-backdrop">
+              <div className="modal">
+                <h2>Match over</h2>
+                <div style={{ color: 'var(--muted)', marginBottom: 20, fontSize: 14 }}>
+                  {gamesA > gamesB ? playerA : playerB} wins {Math.max(gamesA, gamesB)}–{Math.min(gamesA, gamesB)}
+                </div>
+                <button className="btn btn-primary btn-block" onClick={() => {
+                  setScoreA(0); setScoreB(0); setGamesA(0); setGamesB(0);
+                  setMatchOver(false); setCallLog([]); setScreen('setup');
+                }}>
+                  New match
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(SquashReferee));
+  </script>
+</body>
+</html>
