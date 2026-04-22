@@ -189,6 +189,22 @@
       overflow: hidden; border: 1px solid var(--border);
     }
     .camera-viewport video { width: 100%; height: 100%; object-fit: cover; }
+    .detection-canvas {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none;
+    }
+    .tracking-status {
+      position: absolute; top: 10px; right: 10px;
+      display: flex; align-items: center; gap: 6px;
+      padding: 4px 8px; background: rgba(0,0,0,0.6);
+      border-radius: 20px; font-size: 11px; color: #fff; font-weight: 600;
+      max-width: 70%;
+    }
+    .tracking-status .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--info);
+    }
+    .tracking-status.loading .dot { background: var(--warn); animation: pulse 1.2s infinite; }
+    .tracking-status.error .dot { background: var(--danger); }
     .camera-off {
       position: absolute; inset: 0; display: flex;
       align-items: center; justify-content: center;
@@ -403,6 +419,8 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
 
   <script type="text/babel">
     const { useState, useCallback, useRef, useEffect } = React;
@@ -444,6 +462,17 @@
       const mediaRecorderRef = useRef(null);
       const recordingChunks = useRef([]);
       const recordingStartedAt = useRef(null);
+
+      // Player tracking (COCO-SSD)
+      const [trackingEnabled, setTrackingEnabled] = useState(false);
+      const [trackingStatus, setTrackingStatus] = useState('idle'); // idle | loading | running | error
+      const [playerASide, setPlayerASide] = useState('left'); // which side of viewport is Player A
+      const playerASideRef = useRef('left');
+      useEffect(() => { playerASideRef.current = playerASide; }, [playerASide]);
+      const detectionModelRef = useRef(null);
+      const detectionCanvasRef = useRef(null);
+      const detectionRafRef = useRef(null);
+      const detectionLastRunRef = useRef(0);
 
       // Viewport — used to flip between mobile tabs and desktop panes
       const [isWide, setIsWide] = useState(() => {
@@ -499,6 +528,7 @@
           if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
             try { mediaRecorderRef.current.stop(); } catch (e) {}
           }
+          if (detectionRafRef.current) cancelAnimationFrame(detectionRafRef.current);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
       }, []);
@@ -632,6 +662,119 @@
         mediaRecorderRef.current = null;
         setRecording(false);
       }, []);
+
+      const drawDetections = useCallback((predictions) => {
+        const canvas = detectionCanvasRef.current;
+        const video = videoRefCamera.current;
+        if (!canvas || !video || !video.videoWidth) return;
+        if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth;
+        if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const persons = predictions
+          .filter((p) => p.class === 'person' && p.score > 0.4)
+          .sort((a, b) => (b.bbox[2] * b.bbox[3]) - (a.bbox[2] * a.bbox[3]));
+        const labeled = persons.slice(0, 2);
+        const others = persons.slice(2);
+
+        const midX = canvas.width / 2;
+        const sideForA = playerASideRef.current;
+        const labelFor = (bbox) => {
+          const cx = bbox[0] + bbox[2] / 2;
+          const isLeft = cx < midX;
+          if (sideForA === 'left') return isLeft ? 'A' : 'B';
+          return isLeft ? 'B' : 'A';
+        };
+        const colorFor = (label) => label === 'A' ? '#3b82f6' : '#f5a524';
+
+        ctx.lineWidth = Math.max(2, canvas.width / 320);
+        ctx.font = `${Math.max(14, canvas.width / 40)}px -apple-system, sans-serif`;
+        ctx.textBaseline = 'top';
+
+        for (const p of labeled) {
+          const [x, y, w, h] = p.bbox;
+          const label = labelFor(p.bbox);
+          const color = colorFor(label);
+          ctx.strokeStyle = color;
+          ctx.fillStyle = color;
+          ctx.strokeRect(x, y, w, h);
+          const tag = `${label}  ${(p.score * 100).toFixed(0)}%`;
+          const tagW = ctx.measureText(tag).width + 12;
+          const tagH = parseInt(ctx.font, 10) + 8;
+          ctx.fillRect(x, Math.max(0, y - tagH), tagW, tagH);
+          ctx.fillStyle = '#fff';
+          ctx.fillText(tag, x + 6, Math.max(0, y - tagH) + 4);
+        }
+        ctx.lineWidth = Math.max(1, canvas.width / 480);
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        for (const p of others) {
+          const [x, y, w, h] = p.bbox;
+          ctx.strokeRect(x, y, w, h);
+        }
+      }, []);
+
+      const detectLoop = useCallback(async () => {
+        const model = detectionModelRef.current;
+        const video = videoRefCamera.current;
+        if (!model || !video || video.readyState < 2) {
+          detectionRafRef.current = requestAnimationFrame(detectLoop);
+          return;
+        }
+        const now = performance.now();
+        if (now - detectionLastRunRef.current < 90) {
+          detectionRafRef.current = requestAnimationFrame(detectLoop);
+          return;
+        }
+        detectionLastRunRef.current = now;
+        try {
+          const predictions = await model.detect(video);
+          drawDetections(predictions);
+        } catch (err) {
+          console.error('detect error:', err);
+        }
+        detectionRafRef.current = requestAnimationFrame(detectLoop);
+      }, [drawDetections]);
+
+      const startTracking = useCallback(async () => {
+        if (typeof window.cocoSsd === 'undefined' || typeof window.tf === 'undefined') {
+          alert('Tracking model not loaded. Check your network connection and reload.');
+          return;
+        }
+        setTrackingEnabled(true);
+        if (!detectionModelRef.current) {
+          setTrackingStatus('loading');
+          try {
+            detectionModelRef.current = await window.cocoSsd.load({ base: 'lite_mobilenet_v2' });
+          } catch (err) {
+            console.error('Model load failed:', err);
+            setTrackingStatus('error');
+            setTrackingEnabled(false);
+            return;
+          }
+        }
+        setTrackingStatus('running');
+        detectionRafRef.current = requestAnimationFrame(detectLoop);
+      }, [detectLoop]);
+
+      const stopTracking = useCallback(() => {
+        setTrackingEnabled(false);
+        setTrackingStatus('idle');
+        if (detectionRafRef.current) {
+          cancelAnimationFrame(detectionRafRef.current);
+          detectionRafRef.current = null;
+        }
+        const canvas = detectionCanvasRef.current;
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          ctx && ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }, []);
+
+      // Auto-stop tracking when camera stops
+      useEffect(() => {
+        if (!cameraActive && trackingEnabled) stopTracking();
+      }, [cameraActive, trackingEnabled, stopTracking]);
 
       const downloadClip = useCallback((clip) => {
         const a = document.createElement('a');
@@ -1042,8 +1185,18 @@
                   {cameraActive
                     ? <video ref={videoRefCamera} playsInline autoPlay muted />
                     : <div className="camera-off">Camera is off</div>}
+                  {cameraActive && (
+                    <canvas ref={detectionCanvasRef} className="detection-canvas" />
+                  )}
                   {recording && (
                     <div className="rec-indicator"><div className="rec-dot" />REC</div>
+                  )}
+                  {cameraActive && trackingEnabled && (
+                    <div className={`tracking-status ${trackingStatus === 'loading' ? 'loading' : trackingStatus === 'error' ? 'error' : ''}`}>
+                      <div className="dot" />
+                      {trackingStatus === 'loading' ? 'Loading model…' :
+                       trackingStatus === 'error' ? 'Model error' : 'Tracking'}
+                    </div>
                   )}
                 </div>
 
@@ -1053,6 +1206,14 @@
                   {cameraActive && recording && <button className="btn btn-danger" onClick={stopRecording}>■ Stop</button>}
                   {cameraActive && (<>
                     <button className="btn" onClick={flipCamera}>Flip</button>
+                    {!trackingEnabled
+                      ? <button className="btn" onClick={startTracking}>Track players</button>
+                      : <button className="btn" onClick={stopTracking}>Stop tracking</button>}
+                    {trackingEnabled && trackingStatus === 'running' && (
+                      <button className="btn btn-ghost" onClick={() => setPlayerASide(playerASide === 'left' ? 'right' : 'left')}>
+                        Swap A↔B
+                      </button>
+                    )}
                     <button className="btn btn-ghost" onClick={stopCamera}>Off</button>
                   </>)}
                 </div>
