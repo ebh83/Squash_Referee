@@ -484,6 +484,24 @@
         a.remove();
       }, []);
 
+      const deleteClip = useCallback((clip) => {
+        if (!clip) return;
+        if (!window.confirm('Delete this clip? This cannot be undone.')) return;
+        try { URL.revokeObjectURL(clip.url); } catch (e) {}
+        setClips((prev) => prev.filter((c) => c.id !== clip.id));
+        setReviewClip((current) => (current?.id === clip.id ? null : current));
+        setReviewVideoError(false);
+      }, []);
+
+      const deleteAllClips = useCallback(() => {
+        if (clips.length === 0) return;
+        if (!window.confirm(`Delete all ${clips.length} clip${clips.length === 1 ? '' : 's'}? This cannot be undone.`)) return;
+        clips.forEach((c) => { try { URL.revokeObjectURL(c.url); } catch (e) {} });
+        setClips([]);
+        setReviewClip(null);
+        setReviewVideoError(false);
+      }, [clips]);
+
       const addCallLog = useCallback((entry) => {
         const ts = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         setCallLog((prev) => [...prev, `${ts} — ${entry}`].slice(-40));
@@ -831,7 +849,12 @@
                 </div>
 
                 <div className="section" style={{ marginTop: 16 }}>
-                  <div className="section-title">Clips ({clips.length})</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div className="section-title">Clips ({clips.length})</div>
+                    {clips.length > 0 && (
+                      <button className="btn btn-ghost btn-sm" onClick={deleteAllClips}>Delete all</button>
+                    )}
+                  </div>
                   {clips.length === 0 ? (
                     <div className="empty-state">No clips yet. Press Record to capture one.</div>
                   ) : (
@@ -862,6 +885,8 @@
                           onClick={() => { setReviewClip(null); setReviewVideoError(false); }}>Close</button>
                         <button className="btn btn-sm" style={{ flex: 1 }}
                           onClick={() => downloadClip(reviewClip)}>Download</button>
+                        <button className="btn btn-danger btn-sm" style={{ flex: 1 }}
+                          onClick={() => deleteClip(reviewClip)}>Delete</button>
                       </div>
                     </>
                   )}
