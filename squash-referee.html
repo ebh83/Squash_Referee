@@ -261,6 +261,140 @@
       background: var(--danger); color: #fff; padding: 10px 16px;
       font-size: 13px; text-align: center;
     }
+
+    /* Call-type colored buttons */
+    .btn-call-let    { background: rgba(59,130,246,0.14); border-color: rgba(59,130,246,0.45); color: #93c5fd; }
+    .btn-call-stroke { background: rgba(245,165,36,0.14); border-color: rgba(245,165,36,0.45); color: #fbbf24; }
+    .btn-call-nolet  { background: rgba(229,72,77,0.14);  border-color: rgba(229,72,77,0.45);  color: #fca5a5; }
+
+    /* Themed flash overlays (used to be always green) */
+    .flash-overlay.flash-let    { background: rgba(59,130,246,0.92); }
+    .flash-overlay.flash-stroke { background: rgba(245,165,36,0.92); }
+    .flash-overlay.flash-nolet  { background: rgba(229,72,77,0.92); }
+    .flash-overlay.flash-info   { background: rgba(31,154,91,0.92); }
+
+    /* Score header polish */
+    .score-side .games {
+      font-size: 13px; color: var(--muted); margin-top: 6px; font-weight: 500;
+      font-variant-numeric: tabular-nums;
+    }
+    .score-side .serve-dot {
+      width: 10px; height: 10px; top: 8px; right: 10px;
+      box-shadow: 0 0 0 3px rgba(31,154,91,0.18);
+    }
+    .score-middle {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 4px; padding: 0 4px;
+    }
+    .score-middle .game-label {
+      font-size: 10px; color: var(--muted); letter-spacing: 0.12em;
+      text-transform: uppercase; font-weight: 600;
+    }
+    .score-middle .game-num {
+      font-size: 18px; color: var(--text); font-weight: 700;
+      font-variant-numeric: tabular-nums; line-height: 1;
+    }
+    .score-middle .game-context {
+      font-size: 10px; color: var(--warn); letter-spacing: 0.08em;
+      text-transform: uppercase; font-weight: 700; margin-top: 2px;
+      padding: 2px 6px; background: rgba(245,165,36,0.14);
+      border-radius: 4px; white-space: nowrap;
+    }
+    .score-middle .game-context.match-ball { color: var(--danger); background: rgba(229,72,77,0.14); }
+
+    /* Tab icons */
+    .tab { display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .tab-icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* Clip thumbnails with duration label */
+    .clip-item {
+      position: relative; aspect-ratio: 1; padding: 0; overflow: hidden;
+    }
+    .clip-item .clip-num {
+      position: absolute; top: 4px; left: 6px;
+      font-size: 11px; color: var(--muted); font-weight: 600;
+    }
+    .clip-item .clip-duration {
+      position: absolute; bottom: 4px; right: 6px;
+      font-size: 11px; color: var(--text); font-weight: 600;
+      background: rgba(0,0,0,0.55); padding: 1px 5px; border-radius: 3px;
+      font-variant-numeric: tabular-nums;
+    }
+    .clip-item .clip-icon {
+      width: 22px; height: 22px; color: var(--muted); opacity: 0.6;
+    }
+    .clip-item.selected .clip-icon { color: var(--text); opacity: 1; }
+
+    /* Setup polish */
+    .setup-header { position: relative; }
+    .setup-header::before {
+      content: ''; position: absolute; top: -16px; left: -8px;
+      width: 60px; height: 60px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(31,154,91,0.25) 0%, transparent 70%);
+      filter: blur(8px); pointer-events: none;
+    }
+    .setup-header .brand { position: relative; }
+    .setup-header h1 { position: relative; }
+    .setup-header .tagline {
+      font-size: 13px; color: var(--muted); margin-top: 8px;
+      max-width: 360px;
+    }
+
+    /* Match-over modal upgraded */
+    .modal-wide { min-width: 320px; max-width: 420px; text-align: left; padding: 24px; }
+    .modal-wide h2 { text-align: center; margin-bottom: 8px; }
+    .modal-wide .winner {
+      text-align: center; color: var(--accent); font-size: 16px; font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .modal-wide .duration {
+      text-align: center; color: var(--muted); font-size: 12px;
+      margin-bottom: 18px; font-variant-numeric: tabular-nums;
+    }
+    .modal-wide .game-row {
+      display: grid; grid-template-columns: 60px 1fr auto;
+      gap: 12px; align-items: center;
+      padding: 10px 12px; background: var(--surface-2);
+      border-radius: var(--radius-sm); margin-bottom: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+    .modal-wide .game-row .label {
+      font-size: 11px; color: var(--muted); font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .modal-wide .game-row .scores { font-size: 14px; color: var(--text); font-weight: 600; }
+    .modal-wide .game-row .winner-tag {
+      font-size: 11px; color: var(--accent); font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .modal-wide .modal-actions {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px;
+    }
+
+    /* Pane wrappers — control visibility per breakpoint */
+    .pane { display: block; }
+
+    /* Responsive 2/3-column layout for tablet/desktop */
+    @media (min-width: 760px) and (orientation: landscape) {
+      .match { display: grid; grid-template-rows: auto 1fr; height: 100%; }
+      .tabs { display: none; }
+      .tab-content {
+        display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 0; padding: 0; overflow: hidden;
+      }
+      .tab-content > .pane {
+        overflow-y: auto; padding: 16px;
+        border-right: 1px solid var(--border);
+      }
+      .tab-content > .pane:last-child { border-right: none; }
+      .score-header { padding: 16px 24px 14px; }
+      .score-side .value { font-size: 56px; }
+    }
+    @media (min-width: 1080px) {
+      .tab-content {
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 0.9fr);
+      }
+    }
   </style>
 </head>
 <body>
@@ -291,6 +425,9 @@
       const [server, setServer] = useState(firstServer);
       const [matchOver, setMatchOver] = useState(false);
       const [callLog, setCallLog] = useState([]);
+      const [gameHistory, setGameHistory] = useState([]);
+      const [matchStartTime, setMatchStartTime] = useState(null);
+      const [matchEndTime, setMatchEndTime] = useState(null);
 
       // Call assistant
       const [callInput, setCallInput] = useState('');
@@ -306,6 +443,24 @@
       const [recording, setRecording] = useState(false);
       const mediaRecorderRef = useRef(null);
       const recordingChunks = useRef([]);
+      const recordingStartedAt = useRef(null);
+
+      // Viewport — used to flip between mobile tabs and desktop panes
+      const [isWide, setIsWide] = useState(() => {
+        if (typeof window === 'undefined' || !window.matchMedia) return false;
+        return window.matchMedia('(min-width: 760px) and (orientation: landscape)').matches;
+      });
+      useEffect(() => {
+        if (typeof window === 'undefined' || !window.matchMedia) return;
+        const mq = window.matchMedia('(min-width: 760px) and (orientation: landscape)');
+        const handler = (e) => setIsWide(e.matches);
+        if (mq.addEventListener) mq.addEventListener('change', handler);
+        else mq.addListener(handler);
+        return () => {
+          if (mq.removeEventListener) mq.removeEventListener('change', handler);
+          else mq.removeListener(handler);
+        };
+      }, []);
 
       // Clips
       const [clips, setClips] = useState([]);
@@ -453,10 +608,14 @@
           if (blob.size === 0) { console.warn('Empty blob'); return; }
           const url = URL.createObjectURL(blob);
           const id = `clip_${Date.now()}`;
-          setClips((prev) => [...prev, { id, url, blob }]);
+          const durationMs = recordingStartedAt.current
+            ? Date.now() - recordingStartedAt.current : 0;
+          recordingStartedAt.current = null;
+          setClips((prev) => [...prev, { id, url, blob, durationMs }]);
         };
         try {
           recorder.start(1000);
+          recordingStartedAt.current = Date.now();
           mediaRecorderRef.current = recorder;
           setRecording(true);
         } catch (err) {
@@ -507,43 +666,59 @@
         setCallLog((prev) => [...prev, `${ts} — ${entry}`].slice(-40));
       }, []);
 
-      const flash = useCallback((text) => {
-        setFlashText(text);
+      const flash = useCallback((text, kind = 'info') => {
+        setFlashText({ text, kind });
         if (flashTimeout.current) clearTimeout(flashTimeout.current);
         flashTimeout.current = setTimeout(() => setFlashText(null), 1000);
       }, []);
 
+      const formatDuration = (ms) => {
+        if (!ms || ms < 0) return '0:00';
+        const total = Math.floor(ms / 1000);
+        const m = Math.floor(total / 60);
+        const s = total % 60;
+        return `${m}:${s.toString().padStart(2, '0')}`;
+      };
+
       const pointWonByA = useCallback(() => {
+        if (matchStartTime == null) setMatchStartTime(Date.now());
         const newScoreA = scoreA + 1;
         setScoreA(newScoreA);
         setServer(scoreA % 2 === 0 ? 'A' : 'B');
         if (newScoreA === pointsTo) {
+          const gameNum = gamesA + gamesB + 1;
+          setGameHistory((prev) => [...prev, { gameNum, scoreA: newScoreA, scoreB, winner: 'A' }]);
           setGamesA(gamesA + 1);
           setScoreA(0); setScoreB(0);
           if (gamesA + 1 > bestOf / 2) {
             setMatchOver(true);
+            setMatchEndTime(Date.now());
             addCallLog(`${playerA} wins match`);
           } else {
             addCallLog(`${playerA} wins game (${gamesA + 1}-${gamesB})`);
           }
         }
-      }, [scoreA, pointsTo, gamesA, gamesB, bestOf, playerA, addCallLog]);
+      }, [scoreA, scoreB, pointsTo, gamesA, gamesB, bestOf, playerA, matchStartTime, addCallLog]);
 
       const pointWonByB = useCallback(() => {
+        if (matchStartTime == null) setMatchStartTime(Date.now());
         const newScoreB = scoreB + 1;
         setScoreB(newScoreB);
         setServer(scoreB % 2 === 0 ? 'A' : 'B');
         if (newScoreB === pointsTo) {
+          const gameNum = gamesA + gamesB + 1;
+          setGameHistory((prev) => [...prev, { gameNum, scoreA, scoreB: newScoreB, winner: 'B' }]);
           setGamesB(gamesB + 1);
           setScoreA(0); setScoreB(0);
           if (gamesB + 1 > bestOf / 2) {
             setMatchOver(true);
+            setMatchEndTime(Date.now());
             addCallLog(`${playerB} wins match`);
           } else {
             addCallLog(`${playerB} wins game (${gamesA}-${gamesB + 1})`);
           }
         }
-      }, [scoreB, pointsTo, gamesA, gamesB, bestOf, playerB, addCallLog]);
+      }, [scoreA, scoreB, pointsTo, gamesA, gamesB, bestOf, playerB, matchStartTime, addCallLog]);
 
       // ===== WSF 2025 rule engine =====
       const analyzeCall = useCallback((text) => {
@@ -667,12 +842,20 @@
         return { call: "Unclear", type: "unknown", color: "#8e8e93", detail: "Describe what happened: \"blocked my swing\", \"in the way but tried to move\", \"ball hit him going to front wall\", \"turned and he was there\", \"took wrong line\"" };
       }, []);
 
+      const flashKindForCall = (callName) => {
+        const c = (callName || '').toLowerCase();
+        if (c.includes('no let')) return 'nolet';
+        if (c.includes('stroke')) return 'stroke';
+        if (c.includes('let')) return 'let';
+        return 'info';
+      };
+
       const handleCallSubmit = useCallback(() => {
         if (!callInput.trim()) return;
         const result = analyzeCall(callInput);
         setCallResult(result);
         addCallLog(`Call: ${result.call} — ${result.detail}`);
-        flash(result.call);
+        flash(result.call, flashKindForCall(result.call));
         setCallInput('');
       }, [callInput, analyzeCall, addCallLog, flash]);
 
@@ -684,7 +867,7 @@
       const handleInterferenceAnswer = (yes) => {
         const answer = yes ? interferenceQuestions[interferenceStep].yes : interferenceQuestions[interferenceStep].no;
         addCallLog(`Interference: ${answer}`);
-        flash(answer);
+        flash(answer, flashKindForCall(answer));
         setInterferenceWizard(false);
         setInterferenceStep(0);
       };
@@ -700,6 +883,7 @@
             <div className="setup-header">
               <div className="brand">Squash</div>
               <h1 className="title-lg">Referee</h1>
+              <div className="tagline">PAR scoring, WSF 2025 rule assistant, and on-court video review.</div>
             </div>
 
             <div className="field"><label>Player A</label>
@@ -727,6 +911,16 @@
         );
       }
 
+      const currentGameNum = gamesA + gamesB + 1;
+      const totalGames = bestOf;
+      const winsNeeded = Math.floor(bestOf / 2) + 1;
+      const aAtGameBall = scoreA === pointsTo - 1;
+      const bAtGameBall = scoreB === pointsTo - 1;
+      const aWouldClinch = aAtGameBall && (gamesA + 1 >= winsNeeded);
+      const bWouldClinch = bAtGameBall && (gamesB + 1 >= winsNeeded);
+      const isMatchBall = aWouldClinch || bWouldClinch;
+      const isGameBall = aAtGameBall || bAtGameBall;
+
       return (
         <div className="match">
           <div className="score-header">
@@ -737,7 +931,12 @@
                 <div className="value">{scoreA}</div>
                 <div className="games">Games {gamesA}</div>
               </div>
-              <div className="score-middle">vs</div>
+              <div className="score-middle">
+                <div className="game-label">Game</div>
+                <div className="game-num">{currentGameNum}<span style={{ color: 'var(--faint)', fontWeight: 500 }}> / {totalGames}</span></div>
+                {isMatchBall && <div className="game-context match-ball">Match ball</div>}
+                {!isMatchBall && isGameBall && <div className="game-context">Game ball</div>}
+              </div>
               <div className={`score-side ${server === 'B' ? 'serving' : ''}`}>
                 <div className="serve-dot" />
                 <div className="player">{playerB}</div>
@@ -752,20 +951,29 @@
           </div>
 
           <div className="tabs">
-            <button className={`tab ${activeTab === 'match' ? 'active' : ''}`} onClick={() => setActiveTab('match')}>Calls</button>
-            <button className={`tab ${activeTab === 'video' ? 'active' : ''}`} onClick={() => setActiveTab('video')}>Video</button>
-            <button className={`tab ${activeTab === 'log' ? 'active' : ''}`} onClick={() => setActiveTab('log')}>Log</button>
+            <button className={`tab ${activeTab === 'match' ? 'active' : ''}`} onClick={() => setActiveTab('match')}>
+              <svg className="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Calls
+            </button>
+            <button className={`tab ${activeTab === 'video' ? 'active' : ''}`} onClick={() => setActiveTab('video')}>
+              <svg className="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              Video
+            </button>
+            <button className={`tab ${activeTab === 'log' ? 'active' : ''}`} onClick={() => setActiveTab('log')}>
+              <svg className="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              Log
+            </button>
           </div>
 
           <div className="tab-content">
-            {activeTab === 'match' && (
-              <>
+            {(isWide || activeTab === 'match') && (
+              <div className="pane pane-calls">
                 <div className="section">
                   <div className="section-title">Referee actions</div>
                   <div className="action-grid">
-                    <button className="btn" onClick={() => { addCallLog('Let'); flash('LET'); }}>Let</button>
-                    <button className="btn" onClick={() => { addCallLog('Stroke'); flash('STROKE'); }}>Stroke</button>
-                    <button className="btn" onClick={() => { addCallLog('No Let'); flash('NO LET'); }}>No Let</button>
+                    <button className="btn btn-call-let" onClick={() => { addCallLog('Let'); flash('LET', 'let'); }}>Let</button>
+                    <button className="btn btn-call-stroke" onClick={() => { addCallLog('Stroke'); flash('STROKE', 'stroke'); }}>Stroke</button>
+                    <button className="btn btn-call-nolet" onClick={() => { addCallLog('No Let'); flash('NO LET', 'nolet'); }}>No Let</button>
                     <button className="btn" onClick={() => setServiceFaultPanel(!serviceFaultPanel)}>Service fault</button>
                     <button className="btn" onClick={() => setBallCallPanel(!ballCallPanel)}>Ball call</button>
                     <button className="btn" onClick={() => setInterferenceWizard(!interferenceWizard)}>Interference</button>
@@ -818,11 +1026,12 @@
                     </div>
                   )}
                 </div>
-              </>
+              </div>
             )}
 
-            {activeTab === 'video' && (
-              <div className="camera-section">
+            {(isWide || activeTab === 'video') && (
+              <div className="pane pane-video">
+                <div className="camera-section">
                 {!isSecure && (
                   <div className="insecure-banner" style={{ borderRadius: 6 }}>
                     Camera needs HTTPS or localhost to work.
@@ -863,7 +1072,11 @@
                         <div key={clip.id}
                           className={`clip-item ${reviewClip?.id === clip.id ? 'selected' : ''}`}
                           onClick={() => { setReviewClip(clip); setReviewVideoError(false); }}>
-                          {idx + 1}
+                          <div className="clip-num">{idx + 1}</div>
+                          <svg className="clip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                          {clip.durationMs > 0 && (
+                            <div className="clip-duration">{formatDuration(clip.durationMs)}</div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -891,45 +1104,62 @@
                     </>
                   )}
                 </div>
+                </div>
               </div>
             )}
 
-            {activeTab === 'log' && (
-              <div className="section">
-                <div className="section-title">Call log</div>
-                <div className="log">
-                  {callLog.length === 0 ? (
-                    <div className="log-empty">No calls yet</div>
-                  ) : (
-                    callLog.slice().reverse().map((entry, idx) => (
-                      <div key={idx} className="log-entry">{entry}</div>
-                    ))
-                  )}
+            {(isWide || activeTab === 'log') && (
+              <div className="pane pane-log">
+                <div className="section">
+                  <div className="section-title">Call log</div>
+                  <div className="log">
+                    {callLog.length === 0 ? (
+                      <div className="log-empty">No calls yet</div>
+                    ) : (
+                      callLog.slice().reverse().map((entry, idx) => (
+                        <div key={idx} className="log-entry">{entry}</div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
           {flashText && (
-            <div className="flash-overlay"><div className="flash-text">{flashText}</div></div>
-          )}
-
-          {matchOver && (
-            <div className="modal-backdrop">
-              <div className="modal">
-                <h2>Match over</h2>
-                <div style={{ color: 'var(--muted)', marginBottom: 20, fontSize: 14 }}>
-                  {gamesA > gamesB ? playerA : playerB} wins {Math.max(gamesA, gamesB)}–{Math.min(gamesA, gamesB)}
-                </div>
-                <button className="btn btn-primary btn-block" onClick={() => {
-                  setScoreA(0); setScoreB(0); setGamesA(0); setGamesB(0);
-                  setMatchOver(false); setCallLog([]); setScreen('setup');
-                }}>
-                  New match
-                </button>
-              </div>
+            <div className={`flash-overlay flash-${flashText.kind || 'info'}`}>
+              <div className="flash-text">{flashText.text}</div>
             </div>
           )}
+
+          {matchOver && (() => {
+            const winner = gamesA > gamesB ? playerA : playerB;
+            const winGames = Math.max(gamesA, gamesB);
+            const loseGames = Math.min(gamesA, gamesB);
+            const totalMs = matchEndTime && matchStartTime ? matchEndTime - matchStartTime : 0;
+            return (
+              <div className="modal-backdrop">
+                <div className="modal modal-wide">
+                  <h2>Match over</h2>
+                  <div className="winner">{winner} wins {winGames}–{loseGames}</div>
+                  <div className="duration">Match duration: {formatDuration(totalMs)}</div>
+                  {gameHistory.map((g) => (
+                    <div key={g.gameNum} className="game-row">
+                      <div className="label">Game {g.gameNum}</div>
+                      <div className="scores">{g.scoreA} – {g.scoreB}</div>
+                      <div className="winner-tag">{g.winner === 'A' ? playerA : playerB}</div>
+                    </div>
+                  ))}
+                  <button className="btn btn-primary btn-block" style={{ marginTop: 16 }} onClick={() => {
+                    setScoreA(0); setScoreB(0); setGamesA(0); setGamesB(0);
+                    setMatchOver(false); setCallLog([]); setGameHistory([]);
+                    setMatchStartTime(null); setMatchEndTime(null);
+                    setScreen('setup');
+                  }}>New match</button>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       );
     }
